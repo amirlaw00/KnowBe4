@@ -6,12 +6,18 @@ grandparent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspat
 # Append the grandparent directory to sys.path
 sys.path.append(grandparent_dir)
 
-from KnowBe4 import api
+import api
 #UserCount, CampaignCount, PullInnactive, AccountInfo
 from operator import itemgetter
 
-
-def ProcessKeys(csv_file_path):
+'''Basic function to get a list of innactive KB4 consoles based on the keys in the keys.csv file'''
+#input: 
+#   csv_file_path: path to the csv file containing the keys
+#   minimum_user_count: the minimum number of users a console must have to be considered active
+#   minimum_campaign_count: the minimum number of campaigns a console must have to be considered active
+#output: a csv file containing the list of innactive consoles.  
+#   The list is sorted by user count and then campaign count, from highest to lowest
+def ProcessKeys(csv_file_path, minimum_user_count, minimum_campaign_count):
     output = []
 
     # Open the CSV file
@@ -25,7 +31,7 @@ def ProcessKeys(csv_file_path):
             key = row[1]
             LEA = row[0]
             
-            # Get the user count for the key
+            # Get the amount of users in this console, along with the name and admin emails
             user_count = api.UserCount(key)
             name, admin_emails = api.AccountInfo(key)
             
@@ -43,15 +49,15 @@ def ProcessKeys(csv_file_path):
             inactive_users = int(inactive_users)
             active_users = user_count - inactive_users
 
-            # If user_count is < 11, add to output with campaign count as "N/A"
-            if active_users < 11:
+            # If user_count is less than minimum_user_count, add to output with campaign count as "N/A"
+            if active_users < minimum_user_count:
                 output.append({"LEA": LEA, "Name": name, "User Count": active_users, "Total Campaign Count": "N/A", "Admin Emails": admin_emails, "Status": "LOW USERS"})
             else:
                 # Get the total campaign count for the key
                 total_campaign_count = api.CampaignCount(key)
                 
-                # If total_campaign_count is < 6, add to output
-                if total_campaign_count < 6:
+                # If total_campaign_count is less than minimum_campaign_count, add to output
+                if total_campaign_count < minimum_campaign_count:
                     output.append({"LEA": LEA, "Name": name, "User Count": active_users, "Total Campaign Count": total_campaign_count, "Admin Emails": admin_emails, "Status": "LOW CAMPAIGNS"})
                 
                 # Print a progress update every 25 lines
@@ -65,7 +71,7 @@ def ProcessKeys(csv_file_path):
     sorted_output = sorted(output, key=itemgetter("User Count", "Total Campaign Count"), reverse=True)
 
     # Write the sorted output to the file
-    with open("ListOfConsoles.csv", "w") as output_file:
+    with open("../data/ListOfInnactiveConsoles.csv", "w") as output_file:
         for item in sorted_output:
             output_file.write(f"LEA: {item['LEA']}, Name: {item['Name']}, User Count: {item['User Count']}, Total Campaign Count: {item['Total Campaign Count']}, {item['Status']}, Admin Emails: {item['Admin Emails']}\n")
             
@@ -73,6 +79,12 @@ def ProcessKeys(csv_file_path):
             if (i + 1) % 2 == 0:
                 print(f"Wrote {i + 1} lines.")
 
+'''Checks the list of consoles against the current onboarding process to make sure that the consoles are not already in the onboarding process'''
+#input:
+#   consoles_file_path: the file that contains the list of innactive consoles
+#   onboarding_emails_file_path: the file that contains the list of emails from the onboarding form
+#   onboarding_codes_file_path: the file that contains the list of LEA codes from the onboarding form
+#output: a file that contains the list of consoles that are not already in the onboarding process
 def SpotCheck(consoles_file_path, onboarding_emails_file_path, onboarding_codes_file_path):
     consoles = []
     onboarding_emails = []
@@ -91,9 +103,9 @@ def SpotCheck(consoles_file_path, onboarding_emails_file_path, onboarding_codes_
         for line in consoles_file:
             consoles.append(line.strip())
 
-    # Create a new file that will contain the subset of rows that don't have an admin email match in the onboarding emails file
+    # Create a new file that will exclude any consoles that are already in the onboarding process
     excluded_consoles = 0
-    with open("O/FinalConsoleList.csv", "w", newline='') as spotcheck_file:
+    with open("../data/FinalConsoleList.csv", "w", newline='') as spotcheck_file:
         writer = csv.writer(spotcheck_file)
         for line in consoles:
             columns = line.split(",", maxsplit=5)
@@ -117,6 +129,14 @@ def SpotCheck(consoles_file_path, onboarding_emails_file_path, onboarding_codes_
     print("Number of consoles already started onboarding: " + str(excluded_consoles))
     
 
+'''
+Function to compare the batch file with the charter file.  This is bexuase the batch file would frequently have charter schools but no email contact.
+This function will add the email contact to the batch file if it is in the charter file
+'''
+#input:
+#   batch_file: the file that contains the list of kb4 consoles and current email contacts
+#   charter_file: the file that contains the list of charter schools from EDDIE
+#output: the file that will contain the updated list of consoles
 def match_and_update(batch_file, charter_file, output_file):
     batch_data = []
 
@@ -154,7 +174,12 @@ def match_and_update(batch_file, charter_file, output_file):
         for data_row in batch_data:
             f.write(', '.join(data_row) + '\n')
 
-# Function to strip the emails from the batch file
+'''Function to strip the emails from the batch file'''
+# input:
+#   input_file: the file that contains the list of kb4 consoles and current email contacts
+#   output_file: the file that will contain the list of emails
+# output: a file that contains the list of emails
+            
 def StripEmails(input_file, output_file):
     with open(input_file, 'r') as csv_file, open(output_file, 'w') as txt_file:
         for line in csv_file:
@@ -170,16 +195,14 @@ def StripEmails(input_file, output_file):
 if __name__ == "__main__":
     #Uncomment the function you want to run
 
-    #Run ProcessKeys when you want to get a list of consoles that have less than 11 users or less than 6 campaigns based on the keys in the keys.csv file
-    #Keys.csv is a file that contains the api keys for each organization in the format "LEA Code, API Key"
-    #ProcessKeys("keys.csv")
+    #processes the keys in the keys.csv file and outputs a list of innactive consoles based on the minimum user count and minimum campaign count
+    ProcessKeys("../auth/keys.csv", 11, 6)
 
-    #Run MatchAndUpdate when you want to add the EDDIE charter school admin emails to the main list of consoels
-    #Active_charter_schools_report.csv is a file that contains the charter school admin emails in the format "LEA Code, Charter School Name, Charter School Admin Email". Comes from EDDIE
-    match_and_update('O/ListOfConsoles.csv', "O/active_charter_schools_report.csv", "O/UpdatedConsoleList.csv")
+    #updates the list of innactive consoles with email contacts from the charter school report
+    match_and_update('../data/ListOfInnactiveConsoles.csv', "../input/active_charter_schools_report.csv", '../data/ListOfInnactiveConsoles.csv')
 
-    #Run SpotCheck when you want to make sure that the consoles you are sending emails to are not already in the onboarding process
-    SpotCheck("O/UpdatedConsoleList.csv", "O/OnboardingEmails.txt","O/OnboardingLEACode.txt")  #Onboarding emails is a list of emails form the onbdoarding form
+    #Excludes consoles that are already in the onboarding process
+    SpotCheck("../data/ListOfInnactiveConsoles.csv", "../input/OnboardingEmails.txt","../input/OnboardingLEACode.txt")
 
-    #Run StripEmails when you are ready to send out the email blast to a subset of consoles
-    #StripEmails("O/UpdatedBatch.csv", "ActiveOnboardingEmails.txt")
+    #Strips out the emails from the list of innactive consoles
+    StripEmails("../data/FinalConsoleList.csv", "../data/ActiveOnboardingEmails.txt")

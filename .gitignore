@@ -1,4 +1,7 @@
-*.csv
-*.json
-*.txt
 __pycache__/
+auth/*
+!auth/.gitkeep
+data/*
+!data/.gitkeep
+input/*
+!input/.gitkeep

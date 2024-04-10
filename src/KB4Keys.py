@@ -11,7 +11,7 @@ def main():
     script_dir = os.path.dirname(os.path.realpath(__file__))
 
     # Join the directory with the filename
-    file_path = os.path.join(script_dir, 'export.json')
+    file_path = os.path.join(script_dir, '../auth/export.json')
 
     # Open the file
     with open(file_path, encoding="utf8") as one_password:
