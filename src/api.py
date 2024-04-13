@@ -98,7 +98,7 @@ Grabs training data for given account key.  Prints out the console name along wi
 and the number of users enrolled in each module. Could be used to gauge the effectiveness of training modules.
 '''
 #Input: API Key for a given KB4 account
-#Output: Name of the console, and a set of admin emails for this console
+#Output: List of training modules and the number of users enrolled in each module
 #Delivers output to the output file created in main, this is due to the size of output that would be generated
 def TrainingData(key): #Grabs training data for given account key
     pullTrainings = "https://us.api.knowbe4.com/v1/training/enrollments"
