@@ -7,7 +7,7 @@ KB4_PSU = grab_keys.main() #Dictionary that ties each api key in KB4 to it's rel
 print("Total number of keys:" + str(len(KB4_PSU)))
 
 #Export values of KB4_PSU to a csv file
-with open('keys.csv', 'w', newline='') as csvfile:
+with open('../auth/keys.csv', 'w', newline='') as csvfile:
     csvwriter = csv.writer(csvfile)
     for key in KB4_PSU:
         csvwriter.writerow([key, KB4_PSU[key]])

@@ -30,6 +30,7 @@ def main():
             if (len(name) < 5 or name[4] != '-') and not name.startswith('KIPP'):  # Skips irrelevant items in list, except those starting with 'KIPP'
                 # print out the invalid names
                 print(name + ': invalid name \n')
+                #print(LEA)  # Print out the entire item for debugging
                 continue
             
             LEA_Number = name[0:3]
