@@ -193,8 +193,8 @@ if __name__ == "__main__":
 
     for key in Keys:
         AccountInfo(key[1]) #Uncomment this line to gather account info of this psu
-        TrainingData(key[1]) #Uncomment this line to gather training data of this psu
-        #PullInnactive(key[1]) #Uncomment this line to gather innactive user data of this psu
+        #TrainingData(key[1]) #Uncomment this line to gather training data of this psu
+        PullInnactive(key[1]) #Uncomment this line to gather innactive user data of this psu
 
         #Print out a progress update to the console
         print("Progress: " + str(Keys.index(key)) + "/" + str(len(Keys)))
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     InnactiveUsers = dict(sorted(InnactiveUsers.items(), key=lambda item: item[1], reverse=True))
 
     #Print the contents of the InnactiveUsers dictionary in the format "Console Name: Innactive Users" to a file
-    output = open("PSUInnactiveUsers.txt", "w")
+    output = open("../data/PSUInnactiveUsers.txt", "w")
     for key in InnactiveUsers:
         output.write(key + ": " + str(InnactiveUsers[key]) + " Innactive Users\n")
     output.close()

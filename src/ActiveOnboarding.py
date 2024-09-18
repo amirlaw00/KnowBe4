@@ -33,7 +33,14 @@ def ProcessKeys(csv_file_path, minimum_user_count, minimum_campaign_count):
             
             # Get the amount of users in this console, along with the name and admin emails
             user_count = api.UserCount(key)
-            name, admin_emails = api.AccountInfo(key)
+            account_info = api.AccountInfo(key)
+            if account_info is None:
+                print(f"Skipping dead or invalid API key: {key} for LEA: {LEA}")
+                # Optionally, log this event or take other actions
+                continue
+            else:
+                name, admin_emails = account_info
+                # Proceed with the rest of your code using name and admin_emails
             
             # Remove any admin emails that contain "ncdpi".  Based on our service account model "ncdpi-kb4-admin@[psudomainhere].edu"
             admin_emails = [email for email in admin_emails if "ncdpi" not in email.lower()]
@@ -60,7 +67,7 @@ def ProcessKeys(csv_file_path, minimum_user_count, minimum_campaign_count):
                 if total_campaign_count < minimum_campaign_count:
                     output.append({"LEA": LEA, "Name": name, "User Count": active_users, "Total Campaign Count": total_campaign_count, "Admin Emails": admin_emails, "Status": "LOW CAMPAIGNS"})
                 
-                # Print a progress update every 25 lines
+                # Print a progress update every 2 lines
                 if (i + 1) % 2 == 0:
                     print(f"Processed {i + 1} lines.")
                 
